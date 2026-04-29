@@ -1,9 +1,9 @@
 
 *.DS_Store
 *.idea
-00-project-outline.md
-01-roadmap-1-week.md
-02-architecture-notes.md
+
+03-final-project-master-plan.md
+06-spring-initializr-dependencies.md
 
 # Mongodb Volume
 mongodb-data
