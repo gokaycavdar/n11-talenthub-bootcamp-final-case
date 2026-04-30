@@ -7,3 +7,6 @@
 
 # Mongodb Volume
 mongodb-data
+
+.env
+.env.local
