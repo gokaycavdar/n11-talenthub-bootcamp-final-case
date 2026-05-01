@@ -36,20 +36,20 @@ jobs:
         ports:
           - 5433:5432
         options: >-
-          --health-cmd="pg_isready -U postgres -d ecommerce"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
+          --health-cmd "pg_isready -U postgres -d ecommerce"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
       redis:
         image: redis:8-alpine
         ports:
           - 6379:6379
         options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
       rabbitmq:
         image: rabbitmq:4-management
@@ -60,20 +60,10 @@ jobs:
           - 5672:5672
           - 15672:15672
         options: >-
-          --health-cmd="rabbitmq-diagnostics check_port_connectivity"
-          --health-interval=10s
-          --health-timeout=10s
-          --health-retries=10
-
-      eureka:
-        image: ecommerce/eureka-server:latest
-        ports:
-          - 8761:8761
-        options: >-
-          --health-cmd="wget --no-verbose --tries=1 --spider http://localhost:8761/actuator/health || exit 1"
-          --health-interval=10s
-          --health-timeout=10s
-          --health-retries=20
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 10
 
     defaults:
       run:
@@ -94,9 +84,6 @@ jobs:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
 
-      EUREKA_HOST: localhost
-      EUREKA_SERVER_PORT: 8761
-
       JWT_SECRET: change-me-in-ci-change-me-in-ci-123456789
       JWT_EXPIRATION_MS: 900000
       REFRESH_TOKEN_EXPIRATION_MS: 604800000
@@ -104,7 +91,6 @@ jobs:
 
       PAYMENT_PROVIDER: MOCK
       PAYMENT_CALLBACK_URL: http://localhost:8080/api/v1/payments/3ds/callback
-
       IYZICO_API_KEY: dummy
       IYZICO_SECRET_KEY: dummy
       IYZICO_BASE_URL: https://sandbox-api.iyzipay.com
@@ -120,17 +106,13 @@ jobs:
           java-version: 21
           cache: maven
 
-      - name: Build Eureka image for dependent tests
-        if: matrix.service == 'order-service'
-        working-directory: eureka-server
-        run: ./mvnw -B -DskipTests jib:dockerBuild
-
-      - name: Wait for infrastructure
-        run: |
-          echo "Infra services are provisioned by GitHub Actions services"
-
       - name: Run tests
-        run: ./mvnw -B clean test
+        run: >
+          ./mvnw -B clean test
+          -Dspring.cloud.discovery.enabled=false
+          -Deureka.client.enabled=false
+          -Deureka.client.register-with-eureka=false
+          -Deureka.client.fetch-registry=false
 
   frontend-build:
     name: Frontend Build
