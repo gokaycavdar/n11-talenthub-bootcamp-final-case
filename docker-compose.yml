@@ -1,8 +1,18 @@
+x-backend-env: &backend-env
+  POSTGRES_DB: ${POSTGRES_DB:-ecommerce}
+  POSTGRES_USER: ${POSTGRES_USER:-postgres}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: 5432
+  EUREKA_HOST: eureka-server
+  EUREKA_SERVER_PORT: 8761
+  JWT_SECRET: ${JWT_SECRET:-change-me-in-local-env-change-me-in-local-env-123456}
+  JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-900000}
+  REFRESH_TOKEN_EXPIRATION_MS: ${REFRESH_TOKEN_EXPIRATION_MS:-604800000}
+
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: ecommerce-postgres
-    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-ecommerce}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -12,47 +22,146 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ecommerce}"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   rabbitmq:
     image: rabbitmq:4-management
-    container_name: ecommerce-rabbitmq
-    restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
     ports:
       - "${RABBITMQ_AMQP_PORT:-5672}:5672"
       - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   redis:
     image: redis:8-alpine
-    container_name: ecommerce-redis
-    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "${REDIS_PORT:-6379}:6379"
-    command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+
+  eureka-server:
+    image: ecommerce/eureka-server:latest
+    environment:
+      EUREKA_HOST: eureka-server
+      EUREKA_SERVER_PORT: 8761
+    ports:
+      - "${EUREKA_SERVER_PORT:-8761}:8761"
+
+  api-gateway:
+    image: ecommerce/api-gateway:latest
+    environment:
+      API_GATEWAY_PORT: 8080
+      EUREKA_HOST: eureka-server
+      EUREKA_SERVER_PORT: 8761
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      - eureka-server
+
+  user-service:
+    image: ecommerce/user-service:latest
+    environment:
+      <<: *backend-env
+      USER_SERVICE_PORT: 8081
+    ports:
+      - "${USER_SERVICE_PORT:-8081}:8081"
+    depends_on:
+      - postgres
+      - eureka-server
+
+  product-service:
+    image: ecommerce/product-service:latest
+    environment:
+      <<: *backend-env
+      PRODUCT_SERVICE_PORT: 8082
+    ports:
+      - "${PRODUCT_SERVICE_PORT:-8082}:8082"
+    depends_on:
+      - postgres
+      - eureka-server
+
+  cart-service:
+    image: ecommerce/cart-service:latest
+    environment:
+      EUREKA_HOST: eureka-server
+      EUREKA_SERVER_PORT: 8761
+      CART_SERVICE_PORT: 8083
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-local-env-change-me-in-local-env-123456}
+      CART_TTL_SECONDS: ${CART_TTL_SECONDS:-604800}
+    ports:
+      - "${CART_SERVICE_PORT:-8083}:8083"
+    depends_on:
+      - redis
+      - eureka-server
+
+  order-service:
+    image: ecommerce/order-service:latest
+    environment:
+      <<: *backend-env
+      ORDER_SERVICE_PORT: 8084
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_AMQP_PORT: 5672
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+    ports:
+      - "${ORDER_SERVICE_PORT:-8084}:8084"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - eureka-server
+
+  payment-service:
+    image: ecommerce/payment-service:latest
+    environment:
+      <<: *backend-env
+      PAYMENT_SERVICE_PORT: 8085
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_AMQP_PORT: 5672
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-MOCK}
+      PAYMENT_CALLBACK_URL: ${PAYMENT_CALLBACK_URL:-http://localhost:8080/api/v1/payments/3ds/callback}
+      IYZICO_API_KEY: ${IYZICO_API_KEY:-}
+      IYZICO_SECRET_KEY: ${IYZICO_SECRET_KEY:-}
+      IYZICO_BASE_URL: ${IYZICO_BASE_URL:-https://sandbox-api.iyzipay.com}
+    ports:
+      - "${PAYMENT_SERVICE_PORT:-8085}:8085"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - eureka-server
+
+  notification-service:
+    image: ecommerce/notification-service:latest
+    environment:
+      <<: *backend-env
+      NOTIFICATION_SERVICE_PORT: 8086
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_AMQP_PORT: 5672
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT:-8086}:8086"
+    depends_on:
+      - postgres
+      - rabbitmq
+      - eureka-server
+
+  frontend:
+    build:
+      context: ./ecommerce-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080/api/v1}
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - api-gateway
 
 volumes:
   postgres_data:
-  rabbitmq_data:
   redis_data:
-

@@ -54,15 +54,26 @@ public class PaymentService {
         PaymentProviderInitRequest providerRequest = new PaymentProviderInitRequest(
                 request.orderId(),
                 userId,
+                request.price(),
                 request.paidPrice(),
                 conversationId,
                 callbackUrl,
+                request.buyerFirstName(),
+                request.buyerLastName(),
+                request.buyerEmail(),
+                request.shippingFullName(),
+                request.shippingAddressLine(),
+                request.city(),
+                request.district(),
+                request.postalCode(),
                 request.cardHolder(),
                 request.cardNumber(),
                 request.expireMonth(),
                 request.expireYear(),
-                request.cvc()
+                request.cvc(),
+                request.basketItems()
         );
+
 
         PaymentProviderInitResult providerResult = provider.initiate3ds(providerRequest);
 

@@ -32,6 +32,11 @@
 	</properties>
 	<dependencies>
 		<dependency>
+			<groupId>com.iyzipay</groupId>
+			<artifactId>iyzipay-java</artifactId>
+			<version>2.0.140</version>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
@@ -147,6 +152,22 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.google.cloud.tools</groupId>
+				<artifactId>jib-maven-plugin</artifactId>
+				<version>3.4.5</version>
+				<configuration>
+					<from>
+						<image>eclipse-temurin:21-jre</image>
+					</from>
+					<to>
+						<image>ecommerce/${project.artifactId}:latest</image>
+					</to>
+					<container>
+						<creationTime>USE_CURRENT_TIMESTAMP</creationTime>
+					</container>
 				</configuration>
 			</plugin>
 			<plugin>

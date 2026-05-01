@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${API_GATEWAY_PORT:8080}
 
 spring:
   application:
@@ -14,27 +14,22 @@ spring:
               uri: lb://USER-SERVICE
               predicates:
                 - Path=/api/v1/auth/**
-
             - id: user-service-me
               uri: lb://USER-SERVICE
               predicates:
                 - Path=/api/v1/users/**
-
             - id: product-service
               uri: lb://PRODUCT-SERVICE
               predicates:
                 - Path=/api/v1/products/**
-
             - id: cart-service
               uri: lb://CART-SERVICE
               predicates:
                 - Path=/api/v1/carts/**
-
             - id: order-service
               uri: lb://ORDER-SERVICE
               predicates:
                 - Path=/api/v1/orders/**
-
             - id: payment-service
               uri: lb://PAYMENT-SERVICE
               predicates:
@@ -43,24 +38,11 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_SERVER_PORT:8761}/eureka/
+    registry-fetch-interval-seconds: 5
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,gateway
-  endpoint:
-    health:
-      show-details: always
+  instance:
+    prefer-ip-address: true
 
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-
-logging:
-  level:
-    root: INFO
-    com.gokaycavdar: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [corr=%X{correlationId}] %logger{36} - %msg%n"
+frontend:
+  allowed-origins: ${FRONTEND_URL:http://localhost:5173}

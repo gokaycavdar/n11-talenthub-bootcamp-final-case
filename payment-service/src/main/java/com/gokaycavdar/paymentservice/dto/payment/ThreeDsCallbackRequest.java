@@ -17,5 +17,7 @@ public class ThreeDsCallbackRequest {
     private String status;
 
     private String paymentId;
+    private String conversationData;
+    private String mdStatus;
     private String reason;
 }

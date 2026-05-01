@@ -134,6 +134,22 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>com.google.cloud.tools</groupId>
+				<artifactId>jib-maven-plugin</artifactId>
+				<version>3.4.5</version>
+				<configuration>
+					<from>
+						<image>eclipse-temurin:21-jre</image>
+					</from>
+					<to>
+						<image>ecommerce/${project.artifactId}:latest</image>
+					</to>
+					<container>
+						<creationTime>USE_CURRENT_TIMESTAMP</creationTime>
+					</container>
+				</configuration>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<executions>

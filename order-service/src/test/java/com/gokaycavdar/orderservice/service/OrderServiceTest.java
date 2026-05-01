@@ -2,13 +2,14 @@ package com.gokaycavdar.orderservice.service;
 
 import com.gokaycavdar.orderservice.client.CartClient;
 import com.gokaycavdar.orderservice.client.PaymentClient;
+import com.gokaycavdar.orderservice.client.UserClient;
 import com.gokaycavdar.orderservice.dto.cart.CartItemClientResponse;
 import com.gokaycavdar.orderservice.dto.cart.CartResponse;
 import com.gokaycavdar.orderservice.dto.order.CheckoutRequest;
 import com.gokaycavdar.orderservice.dto.order.CheckoutResponse;
-import com.gokaycavdar.orderservice.dto.order.OrderItemResponse;
 import com.gokaycavdar.orderservice.dto.order.OrderResponse;
 import com.gokaycavdar.orderservice.dto.payment.PaymentInitiateResponse;
+import com.gokaycavdar.orderservice.dto.user.UserClientResponse;
 import com.gokaycavdar.orderservice.entity.Order;
 import com.gokaycavdar.orderservice.entity.OrderStatus;
 import com.gokaycavdar.orderservice.exception.BusinessException;
@@ -29,6 +30,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,6 +47,9 @@ class OrderServiceTest {
 
     @Mock
     private PaymentClient paymentClient;
+
+    @Mock
+    private UserClient userClient;
 
     @InjectMocks
     private OrderService orderService;
@@ -81,6 +86,14 @@ class OrderServiceTest {
         );
 
         when(cartClient.getMyCart("Bearer token")).thenReturn(cartResponse);
+        when(userClient.getCurrentUser("Bearer token"))
+                .thenReturn(new UserClientResponse(
+                        1L,
+                        "Gokay",
+                        "Cavdar",
+                        "gokay@example.com",
+                        "ROLE_USER"
+                ));
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> {
                     Order order = invocation.getArgument(0);
@@ -145,6 +158,7 @@ class OrderServiceTest {
 
         assertEquals("Cart is empty", exception.getMessage());
         verify(orderRepository, never()).save(any());
+        verify(userClient, never()).getCurrentUser(any());
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.gokaycavdar.paymentservice.service;
 
 import com.gokaycavdar.paymentservice.dto.payment.InitiatePaymentRequest;
 import com.gokaycavdar.paymentservice.dto.payment.InitiatePaymentResponse;
+import com.gokaycavdar.paymentservice.dto.payment.PaymentBasketItemRequest;
 import com.gokaycavdar.paymentservice.dto.payment.PaymentCallbackResponse;
 import com.gokaycavdar.paymentservice.dto.payment.ThreeDsCallbackRequest;
 import com.gokaycavdar.paymentservice.entity.PaymentAttempt;
@@ -24,7 +25,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -65,11 +65,29 @@ class PaymentServiceTest {
         InitiatePaymentRequest request = new InitiatePaymentRequest(
                 1L,
                 new BigDecimal("1000.00"),
+                new BigDecimal("1000.00"),
+                "Gokay",
+                "Cavdar",
+                "gokay@example.com",
+                "Gokay Cavdar",
+                "Ataturk Caddesi No 10",
+                "Istanbul",
+                "Kadikoy",
+                "34710",
                 "Gokay Cavdar",
                 "5555444433331111",
                 "12",
                 "30",
-                "123"
+                "123",
+                List.of(
+                        new PaymentBasketItemRequest(
+                                10L,
+                                "iPhone 15",
+                                new BigDecimal("1000.00"),
+                                1,
+                                new BigDecimal("1000.00")
+                        )
+                )
         );
 
         when(paymentProvider.initiate3ds(any()))
@@ -111,6 +129,8 @@ class PaymentServiceTest {
                 "conv-123",
                 "SUCCESS",
                 "MOCKPAY123",
+                null,
+                "1",
                 null
         );
 
@@ -148,6 +168,8 @@ class PaymentServiceTest {
                 "conv-999",
                 "FAILURE",
                 "MOCKPAY999",
+                null,
+                "0",
                 "Mock payment declined"
         );
 
@@ -183,6 +205,8 @@ class PaymentServiceTest {
                 "conv-123",
                 "SUCCESS",
                 "MOCKPAY123",
+                null,
+                "1",
                 null
         );
 
@@ -204,6 +228,8 @@ class PaymentServiceTest {
                 "missing-conv",
                 "SUCCESS",
                 "MOCKPAY123",
+                null,
+                "1",
                 null
         );
 

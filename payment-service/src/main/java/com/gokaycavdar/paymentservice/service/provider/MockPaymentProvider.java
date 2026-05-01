@@ -17,6 +17,7 @@ public class MockPaymentProvider implements PaymentProvider {
     public PaymentProviderInitResult initiate3ds(PaymentProviderInitRequest request) {
         boolean successful = !request.cardNumber().endsWith("0000");
         String status = successful ? "SUCCESS" : "FAILURE";
+        String mdStatus = successful ? "1" : "0";
         String paymentId = "MOCK-" + request.conversationId().replace("-", "").substring(0, 12).toUpperCase();
         String reason = successful ? "" : "Mock payment declined";
 
@@ -32,6 +33,8 @@ public class MockPaymentProvider implements PaymentProvider {
                         <input type="hidden" name="conversationId" value="%s" />
                         <input type="hidden" name="status" value="%s" />
                         <input type="hidden" name="paymentId" value="%s" />
+                        <input type="hidden" name="conversationData" value="" />
+                        <input type="hidden" name="mdStatus" value="%s" />
                         <input type="hidden" name="reason" value="%s" />
                         <noscript>
                             <button type="submit">Complete Payment</button>
@@ -44,6 +47,7 @@ public class MockPaymentProvider implements PaymentProvider {
                 request.conversationId(),
                 status,
                 paymentId,
+                mdStatus,
                 reason
         );
 
