@@ -1,3 +1,69 @@
+server:
+  port: 8085
+
 spring:
   application:
     name: payment-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5433}/${POSTGRES_DB:ecommerce}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: payment_schema
+        format_sql: true
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    default-schema: payment_schema
+    schemas: payment_schema
+    locations: classpath:db/migration
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_AMQP_PORT:5672}
+    username: ${RABBITMQ_DEFAULT_USER:guest}
+    password: ${RABBITMQ_DEFAULT_PASS:guest}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:${EUREKA_SERVER_PORT:8761}/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+jwt:
+  secret: ${JWT_SECRET:change-me-in-local-env-change-me-in-local-env-123456}
+
+payment:
+  provider: ${PAYMENT_PROVIDER:MOCK}
+  callback-url: ${PAYMENT_CALLBACK_URL:http://localhost:8080/api/v1/payments/3ds/callback}
+  exchange: ${PAYMENT_EXCHANGE:ecommerce.payment.exchange}
+  routing:
+    success: ${PAYMENT_SUCCESS_ROUTING_KEY:payment.succeeded}
+    failed: ${PAYMENT_FAILED_ROUTING_KEY:payment.failed}
+
+iyzico:
+  api-key: ${IYZICO_API_KEY:}
+  secret-key: ${IYZICO_SECRET_KEY:}
+  base-url: ${IYZICO_BASE_URL:https://sandbox-api.iyzipay.com}
+
+
