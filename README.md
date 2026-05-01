@@ -19,10 +19,12 @@ Bu projede aşağıdaki temel akışlar çalışır:
 - Correlation ID ile log izlenebilirliği
 - Docker Compose ile toplu çalıştırma
 - Backend image build için Jib kullanımı
+- GitHub Actions ile CI doğrulaması
 
 ## Teknoloji Yığını
 
 ### Backend
+
 - Java 21
 - Spring Boot 4
 - Spring Security
@@ -38,14 +40,17 @@ Bu projede aşağıdaki temel akışlar çalışır:
 - Jib
 
 ### Frontend
+
 - React
 - Vite
 - React Router
 
 ### DevOps
+
 - Docker
 - Docker Compose
 - Jib
+- GitHub Actions
 
 ## Mikroservisler
 
@@ -93,9 +98,9 @@ Bu projede aşağıdaki temel akışlar çalışır:
 
 ## Loglama
 
-Tüm kritik request ve event akışlarında correlation id kullanılır.
+Projede loglama sadece terminale yazılan basit kayıtlar olarak bırakılmamıştır. Dağıtık akışların takip edilebilmesi için correlation id tabanlı izlenebilirlik eklenmiştir.
 
-Örnek izlenebilirlik noktaları:
+İzlenebilirlik noktaları:
 
 - gateway request logları
 - servis request logları
@@ -103,7 +108,7 @@ Tüm kritik request ve event akışlarında correlation id kullanılır.
 - payment event yayınlama
 - Rabbit listener işleme akışı
 
-Bu sayede tek bir checkout zinciri loglar üzerinden takip edilebilir.
+Bu sayede tek bir checkout zinciri; gateway, order, payment ve notification servisleri boyunca aynı correlation id ile takip edilebilir.
 
 ## Frontend Özellikleri
 
@@ -120,43 +125,23 @@ Bu sayede tek bir checkout zinciri loglar üzerinden takip edilebilir.
 
 ## Frontend Ekran Görüntüleri
 
-Bu bölüm frontend demo ekran görüntüleri için ayrılmıştır. Görselleri aşağıdaki klasöre ekleyebilirsin:
-
-```text
-images/frontend/
-```
-
-Önerilen ekran görüntüleri:
-
-- ana sayfa / ürün listeleme
-- ürün detay sayfası
-- sepet ekranı
-- checkout ekranı
-- 3DS ödeme akışı
-- siparişlerim
-- sipariş detay
-
-Görselleri ekledikten sonra aşağıdaki formatı kullanabilirsin:
-
-```md
 ### Ana Sayfa
-![Ana Sayfa](./images/frontend/home.png)
+![Ana Sayfa](./images/frontend/anasayfa.png)
 
 ### Ürün Detay
-![Ürün Detay](./images/frontend/product-detail.png)
+![Ürün Detay](./images/frontend/urundetay.png)
 
 ### Sepet
-![Sepet](./images/frontend/cart.png)
+![Sepet](./images/frontend/sepet.png)
 
 ### Checkout
 ![Checkout](./images/frontend/checkout.png)
 
 ### 3DS Ödeme Akışı
-![3DS Ödeme Akışı](./images/frontend/payment-flow.png)
+![3DS Ödeme Akışı](./images/frontend/3ds.png)
 
-### Siparişlerim
-![Siparişlerim](./images/frontend/orders.png)
-```
+### Sipariş Ekranı
+![Sipariş Ekranı](./images/frontend/siparis.png)
 
 ## Testler
 
@@ -180,6 +165,17 @@ Kapsanan temel konular:
 - payment callback akışı
 - event listener davranışı
 - notification oluşturma mantığı
+
+## CI
+
+Projede GitHub Actions tabanlı bir CI akışı bulunmaktadır.
+
+Doğrulanan adımlar:
+
+- backend servis testleri
+- frontend build
+
+Bu sayede servisler arası kontrat değişiklikleri, test kırılımları ve frontend build problemleri push / pull request aşamasında erken yakalanabilir.
 
 ## Swagger
 
@@ -240,15 +236,23 @@ Kart numarası `0000` ile bitiyorsa ödeme `PAYMENT_FAILED` olur.
 - Mock provider ile başarılı / başarısız ödeme senaryoları test edilebilir.
 - Event-driven akış RabbitMQ ile modellenmiştir.
 - Log traceability için correlation id kullanılır.
+- Local geliştirme deneyimi için ödeme akışı varsayılan olarak `MOCK` provider ile çalışır.
 
-## Bilinen Not
+## Iyzico Notu
 
-Ödeme tarafında şu anda gerçek Iyzico entegrasyonu yerine `MockPaymentProvider` kullanılmaktadır. Ancak `PaymentProvider` abstraction'ı hazır olduğu için gerçek provider entegrasyonu eklemeye uygun bir yapı mevcuttur.
+Projede `IyzicoPaymentProvider` entegrasyonu için gerekli temel altyapı hazırlanmıştır. Ancak gerçek 3DS callback akışının çalışabilmesi için ödeme sağlayıcısının erişebileceği public bir callback URL gerekmektedir.
+
+Bu nedenle:
+
+- local geliştirme ortamında varsayılan yaklaşım `MOCK` provider kullanmaktır
+- gerçek `IYZICO` provider, public erişilebilir deploy ortamında environment variable ile aktive edilecek şekilde tasarlanmıştır
+
+Bu ayrım sayesinde hem local geliştirme akışı hızlı tutulmuş hem de gerçek provider entegrasyonu için mimari hazırlık korunmuştur.
 
 ## Geliştirilebilecek Alanlar
 
-- Gerçek Iyzico adapter implementasyonu
-- GitHub Actions CI/CD pipeline
+- Gerçek deploy ortamında aktif Iyzico callback testi
+- Integration test kapsamının genişletilmesi
 - AWS deployment
 - Admin ürün yönetim arayüzünün genişletilmesi
 - Notification listeleme ekranı
