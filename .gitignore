@@ -10,3 +10,6 @@ mongodb-data
 
 .env
 .env.local
+
+ecommerce-frontend/node_modules
+ecommerce-frontend/dist
