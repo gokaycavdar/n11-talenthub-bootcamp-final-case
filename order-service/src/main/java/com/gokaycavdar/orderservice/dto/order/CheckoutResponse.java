@@ -6,6 +6,8 @@ public record CheckoutResponse(
         Long orderId,
         String orderNumber,
         String status,
-        BigDecimal totalAmount
+        BigDecimal totalAmount,
+        String conversationId,
+        String threeDsHtmlContent
 ) {
 }

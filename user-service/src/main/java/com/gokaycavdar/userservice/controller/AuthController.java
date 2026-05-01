@@ -23,11 +23,19 @@ import com.gokaycavdar.userservice.exception.BusinessException;
 import com.gokaycavdar.userservice.service.AuthService;
 import com.gokaycavdar.userservice.service.RefreshTokenCookieService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
+@Tag(name = "Auth", description = "Authentication and current user endpoints")
 public class AuthController {
 
     private final AuthService authService;
@@ -37,6 +45,11 @@ public class AuthController {
     private long refreshTokenExpirationMs;
 
     @PostMapping("/auth/register")
+    @Operation(summary = "Register", description = "Creates a new user account and returns access token")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Registration successful"),
+            @ApiResponse(responseCode = "400", description = "Validation or business error")
+    })
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         AuthService.AuthResult result = authService.register(request);
 
@@ -51,6 +64,7 @@ public class AuthController {
     }
 
     @PostMapping("/auth/login")
+    @Operation(summary = "Login", description = "Authenticates user and returns access token")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthService.AuthResult result = authService.login(request);
 
@@ -65,6 +79,7 @@ public class AuthController {
     }
 
     @PostMapping("/auth/refresh")
+    @Operation(summary = "Refresh access token", description = "Uses refresh token cookie and returns a rotated access token")
     public ResponseEntity<RefreshAccessTokenResponse> refresh(HttpServletRequest request) {
         String refreshToken = refreshTokenCookieService.extractFromRequest(request);
 
@@ -85,6 +100,7 @@ public class AuthController {
     }
 
     @PostMapping("/auth/logout")
+    @Operation(summary = "Logout", description = "Revokes refresh token and clears refresh token cookie")
     public ResponseEntity<MessageResponse> logout(HttpServletRequest request) {
         String refreshToken = refreshTokenCookieService.extractFromRequest(request);
 

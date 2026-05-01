@@ -19,16 +19,25 @@ import com.gokaycavdar.productservice.dto.ProductResponse;
 import com.gokaycavdar.productservice.dto.UpdateProductRequest;
 import com.gokaycavdar.productservice.service.ProductService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
+@Tag(name = "Products", description = "Product listing, detail and admin CRUD endpoints")
 public class ProductController {
 
     private final ProductService productService;
 
     @GetMapping
+    @Operation(summary = "List products", description = "Returns active products with pagination")
     public ResponseEntity<ProductPageResponse> getProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -38,16 +47,27 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Product detail", description = "Returns active product detail by id")
     public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
     @PostMapping
+    @Operation(
+            summary = "Create product",
+            description = "Creates a new product. Admin only.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody CreateProductRequest request) {
         return ResponseEntity.ok(productService.createProduct(request));
     }
 
     @PutMapping("/{id}")
+    @Operation(
+            summary = "Update product",
+            description = "Updates an existing product. Admin only.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     public ResponseEntity<ProductResponse> updateProduct(
             @PathVariable Long id,
             @Valid @RequestBody UpdateProductRequest request
@@ -56,6 +76,11 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(
+            summary = "Delete product",
+            description = "Soft deletes a product by setting active=false. Admin only.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();

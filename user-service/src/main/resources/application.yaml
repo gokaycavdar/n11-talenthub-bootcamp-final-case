@@ -53,3 +53,11 @@ auth:
     expiration-ms: ${REFRESH_TOKEN_EXPIRATION_MS:604800000}
     cookie-name: refreshToken
 
+logging:
+  level:
+    root: INFO
+    com.gokaycavdar: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [corr=%X{correlationId}] %logger{36} - %msg%n"
+
+

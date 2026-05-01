@@ -1,11 +1,14 @@
 package com.gokaycavdar.orderservice.service;
 
 import com.gokaycavdar.orderservice.client.CartClient;
+import com.gokaycavdar.orderservice.client.PaymentClient;
 import com.gokaycavdar.orderservice.dto.cart.CartItemClientResponse;
 import com.gokaycavdar.orderservice.dto.cart.CartResponse;
 import com.gokaycavdar.orderservice.dto.order.CheckoutRequest;
 import com.gokaycavdar.orderservice.dto.order.CheckoutResponse;
 import com.gokaycavdar.orderservice.dto.order.OrderResponse;
+import com.gokaycavdar.orderservice.dto.payment.PaymentInitiateRequest;
+import com.gokaycavdar.orderservice.dto.payment.PaymentInitiateResponse;
 import com.gokaycavdar.orderservice.entity.Order;
 import com.gokaycavdar.orderservice.entity.OrderItem;
 import com.gokaycavdar.orderservice.entity.OrderStatus;
@@ -15,12 +18,14 @@ import com.gokaycavdar.orderservice.mapper.OrderMapper;
 import com.gokaycavdar.orderservice.repository.OrderRepository;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -28,9 +33,12 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final CartClient cartClient;
+    private final PaymentClient paymentClient;
 
     @Transactional
     public CheckoutResponse checkout(Long userId, String authorizationHeader, CheckoutRequest request) {
+        log.info("Checkout started. userId={}", userId);
+
         CartResponse cart = getCartOrThrow(authorizationHeader);
 
         if (cart.items() == null || cart.items().isEmpty()) {
@@ -63,11 +71,24 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
+        log.info("Order created with PENDING_PAYMENT status. orderId={}, userId={}, totalAmount={}",
+                savedOrder.getId(), savedOrder.getUserId(), savedOrder.getTotalAmount());
+
+        PaymentInitiateResponse paymentResponse = initiatePayment(savedOrder, authorizationHeader, request);
+
+        log.info("3DS payment initiated for order. orderId={}, conversationId={}",
+                savedOrder.getId(), paymentResponse.conversationId());
+
+        savedOrder.setPaymentConversationId(paymentResponse.conversationId());
+        Order updatedOrder = orderRepository.save(savedOrder);
+
         return new CheckoutResponse(
-                savedOrder.getId(),
-                savedOrder.getOrderNumber(),
-                savedOrder.getStatus().name(),
-                savedOrder.getTotalAmount()
+                updatedOrder.getId(),
+                updatedOrder.getOrderNumber(),
+                updatedOrder.getStatus().name(),
+                updatedOrder.getTotalAmount(),
+                paymentResponse.conversationId(),
+                paymentResponse.threeDsHtmlContent()
         );
     }
 
@@ -91,7 +112,32 @@ public class OrderService {
         try {
             return cartClient.getMyCart(authorizationHeader);
         } catch (FeignException ex) {
+            log.error("Cart service call failed during checkout", ex);
             throw new BusinessException("Cart service is unavailable");
+        }
+    }
+
+    private PaymentInitiateResponse initiatePayment(
+            Order order,
+            String authorizationHeader,
+            CheckoutRequest request
+    ) {
+        try {
+            return paymentClient.initiateThreeDsPayment(
+                    authorizationHeader,
+                    new PaymentInitiateRequest(
+                            order.getId(),
+                            order.getTotalAmount(),
+                            request.cardHolder(),
+                            request.cardNumber(),
+                            request.expireMonth(),
+                            request.expireYear(),
+                            request.cvc()
+                    )
+            );
+        } catch (FeignException ex) {
+            log.error("Payment service call failed during checkout. orderId={}", order.getId(), ex);
+            throw new BusinessException("Payment service is unavailable");
         }
     }
 

@@ -13,14 +13,23 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
+@Slf4j
 public class CorrelationIdFilter extends OncePerRequestFilter {
 
     public static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
+    private static final String MDC_KEY = "correlationId";
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/actuator/health");
+    }
 
     @Override
     protected void doFilterInternal(
@@ -37,6 +46,7 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
 
         final String finalCorrelationId = correlationId;
         response.setHeader(CORRELATION_ID_HEADER, finalCorrelationId);
+        MDC.put(MDC_KEY, finalCorrelationId);
 
         HttpServletRequest wrappedRequest = new HttpServletRequestWrapper(request) {
             @Override
@@ -63,6 +73,19 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
             }
         };
 
-        filterChain.doFilter(wrappedRequest, response);
+        long start = System.currentTimeMillis();
+
+        try {
+            filterChain.doFilter(wrappedRequest, response);
+        } finally {
+            log.info(
+                    "Gateway request completed. method={}, path={}, status={}, durationMs={}",
+                    request.getMethod(),
+                    request.getRequestURI(),
+                    response.getStatus(),
+                    System.currentTimeMillis() - start
+            );
+            MDC.remove(MDC_KEY);
+        }
     }
 }

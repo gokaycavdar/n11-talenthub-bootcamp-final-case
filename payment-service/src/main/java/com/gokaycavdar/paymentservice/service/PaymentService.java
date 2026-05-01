@@ -16,6 +16,8 @@ import com.gokaycavdar.paymentservice.service.provider.PaymentProviderCallbackRe
 import com.gokaycavdar.paymentservice.service.provider.PaymentProviderInitRequest;
 import com.gokaycavdar.paymentservice.service.provider.PaymentProviderInitResult;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentService {
 
     private final PaymentAttemptRepository paymentAttemptRepository;
@@ -42,6 +45,9 @@ public class PaymentService {
     public InitiatePaymentResponse initiateThreeDsPayment(Long userId, InitiatePaymentRequest request) {
         PaymentProviderType providerType = PaymentProviderType.valueOf(configuredProviderName.toUpperCase());
         PaymentProvider provider = getProvider(providerType);
+
+        log.info("3DS payment initiation started. orderId={}, userId={}, provider={}",
+                request.orderId(), userId, providerType);
 
         String conversationId = UUID.randomUUID().toString();
 
@@ -71,6 +77,12 @@ public class PaymentService {
 
         paymentAttemptRepository.save(paymentAttempt);
 
+        log.info("Payment attempt created. orderId={}, userId={}, conversationId={}, status={}",
+                paymentAttempt.getOrderId(),
+                paymentAttempt.getUserId(),
+                paymentAttempt.getConversationId(),
+                paymentAttempt.getStatus());
+
         return new InitiatePaymentResponse(
                 conversationId,
                 PaymentStatus.INITIATED.name(),
@@ -80,10 +92,18 @@ public class PaymentService {
 
     @Transactional
     public PaymentCallbackResponse handleThreeDsCallback(ThreeDsCallbackRequest request) {
+        log.info("3DS callback received. conversationId={}, status={}",
+                request.getConversationId(), request.getStatus());
+
         PaymentAttempt paymentAttempt = paymentAttemptRepository.findByConversationId(request.getConversationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Payment attempt not found"));
 
         if (paymentAttempt.getStatus() != PaymentStatus.INITIATED) {
+            log.info("Callback skipped because payment already processed. orderId={}, conversationId={}, currentStatus={}",
+                    paymentAttempt.getOrderId(),
+                    paymentAttempt.getConversationId(),
+                    paymentAttempt.getStatus());
+
             return new PaymentCallbackResponse(
                     paymentAttempt.getConversationId(),
                     paymentAttempt.getStatus().name(),
@@ -93,6 +113,7 @@ public class PaymentService {
 
         PaymentProvider provider = getProvider(paymentAttempt.getProvider());
         PaymentProviderCallbackResult callbackResult = provider.resolveCallback(request);
+        String correlationId = MDC.get("correlationId");
 
         if (callbackResult.successful()) {
             paymentAttempt.setStatus(PaymentStatus.SUCCESS);
@@ -100,11 +121,18 @@ public class PaymentService {
             paymentAttempt.setFailureReason(null);
             paymentAttemptRepository.save(paymentAttempt);
 
+            log.info("Payment marked as success. orderId={}, userId={}, conversationId={}, externalPaymentId={}",
+                    paymentAttempt.getOrderId(),
+                    paymentAttempt.getUserId(),
+                    paymentAttempt.getConversationId(),
+                    paymentAttempt.getExternalPaymentId());
+
             paymentEventPublisher.publishPaymentSucceeded(
                     new PaymentSucceededEvent(
                             paymentAttempt.getOrderId(),
                             paymentAttempt.getUserId(),
                             paymentAttempt.getConversationId(),
+                            correlationId,
                             paymentAttempt.getPaidPrice(),
                             paymentAttempt.getExternalPaymentId(),
                             LocalDateTime.now()
@@ -123,11 +151,18 @@ public class PaymentService {
         paymentAttempt.setFailureReason(callbackResult.failureReason());
         paymentAttemptRepository.save(paymentAttempt);
 
+        log.info("Payment marked as failed. orderId={}, userId={}, conversationId={}, reason={}",
+                paymentAttempt.getOrderId(),
+                paymentAttempt.getUserId(),
+                paymentAttempt.getConversationId(),
+                paymentAttempt.getFailureReason());
+
         paymentEventPublisher.publishPaymentFailed(
                 new PaymentFailedEvent(
                         paymentAttempt.getOrderId(),
                         paymentAttempt.getUserId(),
                         paymentAttempt.getConversationId(),
+                        correlationId,
                         paymentAttempt.getFailureReason(),
                         LocalDateTime.now()
                 )

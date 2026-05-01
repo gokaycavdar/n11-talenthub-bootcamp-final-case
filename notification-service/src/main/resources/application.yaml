@@ -1,0 +1,69 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: notification-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5433}/${POSTGRES_DB:ecommerce}
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: notification_schema
+        format_sql: true
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    default-schema: notification_schema
+    schemas: notification_schema
+    locations: classpath:db/migration
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_AMQP_PORT:5672}
+    username: ${RABBITMQ_DEFAULT_USER:guest}
+    password: ${RABBITMQ_DEFAULT_PASS:guest}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:${EUREKA_SERVER_PORT:8761}/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+payment:
+  exchange: ${PAYMENT_EXCHANGE:ecommerce.payment.exchange}
+  routing:
+    success: ${PAYMENT_SUCCESS_ROUTING_KEY:payment.succeeded}
+    failed: ${PAYMENT_FAILED_ROUTING_KEY:payment.failed}
+
+notification:
+  payment:
+    success-queue: ${NOTIFICATION_PAYMENT_SUCCESS_QUEUE:notification.payment.success.queue}
+    failed-queue: ${NOTIFICATION_PAYMENT_FAILED_QUEUE:notification.payment.failed.queue}
+
+logging:
+  level:
+    root: INFO
+    com.gokaycavdar: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [corr=%X{correlationId}] %logger{36} - %msg%n"

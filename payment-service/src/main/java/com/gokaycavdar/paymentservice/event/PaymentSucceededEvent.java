@@ -7,8 +7,10 @@ public record PaymentSucceededEvent(
         Long orderId,
         Long userId,
         String conversationId,
+        String correlationId,
         BigDecimal paidPrice,
         String externalPaymentId,
         LocalDateTime paidAt
 ) {
 }
+

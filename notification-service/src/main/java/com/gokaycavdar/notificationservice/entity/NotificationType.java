@@ -1,4 +1,6 @@
 package com.gokaycavdar.notificationservice.entity;
 
-public class NotificationType {
+public enum NotificationType {
+    PAYMENT_SUCCESS,
+    PAYMENT_FAILED
 }

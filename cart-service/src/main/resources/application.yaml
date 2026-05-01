@@ -33,3 +33,10 @@ jwt:
 
 cart:
   ttl-seconds: ${CART_TTL_SECONDS:604800}
+
+logging:
+  level:
+    root: INFO
+    com.gokaycavdar: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [corr=%X{correlationId}] %logger{36} - %msg%n"

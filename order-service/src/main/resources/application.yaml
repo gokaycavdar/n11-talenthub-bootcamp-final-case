@@ -52,3 +52,21 @@ springdoc:
 
 jwt:
   secret: ${JWT_SECRET:change-me-in-local-env-change-me-in-local-env-123456}
+
+payment:
+  exchange: ${PAYMENT_EXCHANGE:ecommerce.payment.exchange}
+  routing:
+    success: ${PAYMENT_SUCCESS_ROUTING_KEY:payment.succeeded}
+    failed: ${PAYMENT_FAILED_ROUTING_KEY:payment.failed}
+
+order:
+  payment:
+    success-queue: ${ORDER_PAYMENT_SUCCESS_QUEUE:order.payment.success.queue}
+    failed-queue: ${ORDER_PAYMENT_FAILED_QUEUE:order.payment.failed.queue}
+
+logging:
+  level:
+    root: INFO
+    com.gokaycavdar: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [corr=%X{correlationId}] %logger{36} - %msg%n"

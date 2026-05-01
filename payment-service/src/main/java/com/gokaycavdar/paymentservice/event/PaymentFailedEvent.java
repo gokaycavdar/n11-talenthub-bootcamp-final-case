@@ -6,7 +6,9 @@ public record PaymentFailedEvent(
         Long orderId,
         Long userId,
         String conversationId,
+        String correlationId,
         String reason,
         LocalDateTime failedAt
 ) {
 }
+

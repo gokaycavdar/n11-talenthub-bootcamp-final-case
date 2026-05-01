@@ -66,4 +66,10 @@ iyzico:
   secret-key: ${IYZICO_SECRET_KEY:}
   base-url: ${IYZICO_BASE_URL:https://sandbox-api.iyzipay.com}
 
+logging:
+  level:
+    root: INFO
+    com.gokaycavdar: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [corr=%X{correlationId}] %logger{36} - %msg%n"
 

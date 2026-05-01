@@ -15,14 +15,25 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+
 @RestController
 @RequestMapping("/api/v1/payments")
 @RequiredArgsConstructor
+@Tag(name = "Payments", description = "Payment initialization and 3DS callback endpoints")
 public class PaymentController {
 
     private final PaymentService paymentService;
 
     @PostMapping("/internal/3ds/init")
+    @Operation(
+            summary = "Initiate 3DS payment",
+            description = "Starts mock/provider 3DS payment flow for authenticated user",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     public ResponseEntity<InitiatePaymentResponse> initiateThreeDsPayment(
             Authentication authentication,
             @Valid @RequestBody InitiatePaymentRequest request
@@ -33,6 +44,10 @@ public class PaymentController {
     }
 
     @PostMapping("/3ds/callback")
+    @Operation(
+            summary = "3DS callback",
+            description = "Public callback endpoint used by payment provider after 3DS flow"
+    )
     public ResponseEntity<PaymentCallbackResponse> handleThreeDsCallback(
             @Valid @ModelAttribute ThreeDsCallbackRequest request
     ) {

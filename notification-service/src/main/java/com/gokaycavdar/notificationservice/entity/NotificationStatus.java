@@ -1,4 +1,5 @@
 package com.gokaycavdar.notificationservice.entity;
 
-public class NotificationStatus {
+public enum NotificationStatus {
+    CREATED
 }
