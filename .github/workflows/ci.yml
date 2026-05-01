@@ -10,10 +10,14 @@ on:
       - "codex/**"
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   backend-test:
     name: Backend Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     strategy:
       fail-fast: false
@@ -68,6 +72,7 @@ jobs:
     defaults:
       run:
         working-directory: ${{ matrix.service }}
+        shell: bash
 
     env:
       POSTGRES_DB: ecommerce
@@ -107,20 +112,17 @@ jobs:
           cache: maven
 
       - name: Run tests
-        run: >
-          ./mvnw -B clean test
-          -Dspring.cloud.discovery.enabled=false
-          -Deureka.client.enabled=false
-          -Deureka.client.register-with-eureka=false
-          -Deureka.client.fetch-registry=false
+        run: bash ./mvnw -B clean test -Dspring.cloud.discovery.enabled=false -Deureka.client.enabled=false -Deureka.client.register-with-eureka=false -Deureka.client.fetch-registry=false
 
   frontend-build:
     name: Frontend Build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     defaults:
       run:
         working-directory: ecommerce-frontend
+        shell: bash
 
     steps:
       - name: Checkout repository
