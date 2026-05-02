@@ -203,7 +203,7 @@ foreach ($service in $services) {
 ### 2. Tüm sistemi ayağa kaldır
 
 ```powershell
-docker compose up --build -d --force-recreate
+docker compose up --build 
 ```
 
 ### 3. Sistemi durdur
