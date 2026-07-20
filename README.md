@@ -1,4 +1,4 @@
-# n11 TalentHub Final Project - Fullstack E-Commerce
+# Fullstack E-Commerce
 
 Spring Boot mikroservis mimarisi ve React tabanlı frontend ile geliştirilmiş bir e-ticaret uygulaması. Bu proje; kimlik doğrulama, ürün listeleme, sepet yönetimi, sipariş oluşturma, 3DS ödeme akışı ve event-driven bildirim üretimi gibi temel e-ticaret senaryolarını uçtan uca kapsar.
 
